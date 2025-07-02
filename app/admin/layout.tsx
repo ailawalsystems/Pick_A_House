@@ -1,11 +1,20 @@
 import type React from "react"
-import { AdminSidebar } from "@/components/admin/admin-sidebar"
+import { AdminAppSidebar } from "@/components/admin/admin-app-sidebar"
+import { ProtectedRoute } from "@/components/auth/protected-route"
 import { ModeToggle } from "@/components/theme/mode-toggle"
 import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { LogOut, Menu } from "lucide-react"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
+import { Separator } from "@/components/ui/separator"
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import { LogOut, Settings } from "lucide-react"
 import Link from "next/link"
-import { Logo } from "../../components/branding/logo"
 
 export default function AdminLayout({
   children,
@@ -13,42 +22,43 @@ export default function AdminLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="grid min-h-screen w-full md:grid-cols-[280px_1fr]">
-      {/* Sidebar for desktop */}
-      <AdminSidebar className="hidden border-r bg-muted/40 md:block" />
-
-      <div className="flex flex-col">
-        <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-6">
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="outline" size="icon" className="md:hidden">
-                <Menu className="h-5 w-5" />
-                <span className="sr-only">Toggle Menu</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="md:hidden">
-              <div className="flex h-16 items-center border-b">
-                <Link href="/" className="flex items-center gap-2 font-semibold">
-                  <Logo />
-                  <span>Admin - Pick Your House FCT</span>
+    <ProtectedRoute requireAdmin>
+      <SidebarProvider>
+        <AdminAppSidebar />
+        <SidebarInset>
+          <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="mr-2 h-4" />
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem className="hidden md:block">
+                  <BreadcrumbLink href="/admin">Admin Dashboard</BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator className="hidden md:block" />
+                <BreadcrumbItem>
+                  <BreadcrumbPage>Overview</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
+            <div className="ml-auto flex items-center gap-2">
+              <Button variant="ghost" size="icon" asChild>
+                <Link href="/dashboard">
+                  <Settings className="h-5 w-5" />
+                  <span className="sr-only">Go to Dashboard</span>
                 </Link>
-              </div>
-              <AdminSidebar className="mt-4" />
-            </SheetContent>
-          </Sheet>
-
-          <div className="ml-auto flex items-center gap-2">
-            <ModeToggle />
-            <Button variant="ghost" size="icon" asChild>
-              <Link href="/logout">
-                <LogOut className="h-5 w-5" />
-                <span className="sr-only">Log out</span>
-              </Link>
-            </Button>
-          </div>
-        </header>
-        <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">{children}</main>
-      </div>
-    </div>
+              </Button>
+              <ModeToggle />
+              <Button variant="ghost" size="icon" asChild>
+                <Link href="/auth/login">
+                  <LogOut className="h-5 w-5" />
+                  <span className="sr-only">Log out</span>
+                </Link>
+              </Button>
+            </div>
+          </header>
+          <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">{children}</main>
+        </SidebarInset>
+      </SidebarProvider>
+    </ProtectedRoute>
   )
 }

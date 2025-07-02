@@ -26,6 +26,7 @@ import {
   Settings,
   ShoppingBag,
   User,
+  LogOut,
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -50,6 +51,7 @@ import {
 } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useAuth } from "@/contexts/auth-context"
 import Image from "next/image"
 
 export function Header() {
@@ -57,7 +59,7 @@ export function Header() {
   const [locationDialogOpen, setLocationDialogOpen] = useState(false)
   const [selectedLocation, setSelectedLocation] = useState("Abuja FCT")
   const pathname = usePathname()
-  const isLoggedIn = false // Replace with actual auth state
+  const { user, isAuthenticated, isAdmin, logout } = useAuth()
 
   const mainCategories = [
     { name: "Buy", href: "/properties/buy", icon: Building },
@@ -125,6 +127,11 @@ export function Header() {
     setLocationDialogOpen(false)
   }
 
+  const handleLogout = () => {
+    logout()
+    window.location.href = "/"
+  }
+
   return (
     <header className="sticky top-0 z-50 w-full">
       {/* Top Navigation Bar */}
@@ -180,7 +187,7 @@ export function Header() {
                           <Button size="sm" variant="default" className="h-7 text-xs px-2">
                             View Properties ({location.propertyCount})
                           </Button>
-                          <Button size="sm" variant="outline" className="h-7 text-xs px-2">
+                          <Button size="sm" variant="outline" className="h-7 text-xs px-2 bg-transparent">
                             Area Guide
                           </Button>
                         </div>
@@ -212,23 +219,29 @@ export function Header() {
 
           {/* User Navigation */}
           <div className="hidden md:flex items-center space-x-1">
-            {isLoggedIn ? (
+            {isAuthenticated ? (
               <>
                 <Button variant="ghost" size="icon" className="relative text-primary-foreground">
                   <Bell className="h-5 w-5" />
-                  <span className="notification-badge">3</span>
+                  <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                    3
+                  </span>
                   <span className="sr-only">Notifications</span>
                 </Button>
 
                 <Button variant="ghost" size="icon" className="relative text-primary-foreground">
                   <MessageSquare className="h-5 w-5" />
-                  <span className="notification-badge">5</span>
+                  <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                    5
+                  </span>
                   <span className="sr-only">Messages</span>
                 </Button>
 
                 <Button variant="ghost" size="icon" className="relative text-primary-foreground">
                   <Heart className="h-5 w-5" />
-                  <span className="notification-badge">2</span>
+                  <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                    2
+                  </span>
                   <span className="sr-only">Saved Properties</span>
                 </Button>
 
@@ -236,49 +249,67 @@ export function Header() {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                       <Avatar className="h-9 w-9">
-                        <AvatarImage src="/placeholder.svg?height=36&width=36" alt="User" />
-                        <AvatarFallback>U</AvatarFallback>
+                        <AvatarImage src="/placeholder.svg?height=36&width=36" alt={user?.name} />
+                        <AvatarFallback>{user?.name?.charAt(0) || "U"}</AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
                     <div className="flex items-center p-2 gap-2 border-b">
                       <Avatar className="h-9 w-9">
-                        <AvatarImage src="/placeholder.svg?height=36&width=36" alt="User" />
-                        <AvatarFallback>U</AvatarFallback>
+                        <AvatarImage src="/placeholder.svg?height=36&width=36" alt={user?.name} />
+                        <AvatarFallback>{user?.name?.charAt(0) || "U"}</AvatarFallback>
                       </Avatar>
                       <div className="flex flex-col">
-                        <span className="font-medium">John Doe</span>
-                        <span className="text-xs text-muted-foreground">john.doe@example.com</span>
+                        <span className="font-medium">{user?.name}</span>
+                        <span className="text-xs text-muted-foreground">{user?.email}</span>
                       </div>
                     </div>
                     <DropdownMenuLabel>My Account</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem className="flex items-center gap-2">
-                      <User className="h-4 w-4" />
-                      <span>Profile</span>
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard" className="flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        <span>Dashboard</span>
+                      </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="flex items-center gap-2">
-                      <Building className="h-4 w-4" />
-                      <span>My Properties</span>
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard/properties" className="flex items-center gap-2">
+                        <Building className="h-4 w-4" />
+                        <span>My Properties</span>
+                      </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="flex items-center gap-2">
-                      <MessageSquare className="h-4 w-4" />
-                      <span>Messages</span>
-                      <Badge className="ml-auto bg-primary text-xs">5</Badge>
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard/messages" className="flex items-center gap-2">
+                        <MessageSquare className="h-4 w-4" />
+                        <span>Messages</span>
+                        <Badge className="ml-auto bg-primary text-xs">5</Badge>
+                      </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="flex items-center gap-2">
-                      <Heart className="h-4 w-4" />
-                      <span>Saved Properties</span>
-                      <Badge className="ml-auto bg-primary text-xs">2</Badge>
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard/saved" className="flex items-center gap-2">
+                        <Heart className="h-4 w-4" />
+                        <span>Saved Properties</span>
+                        <Badge className="ml-auto bg-primary text-xs">2</Badge>
+                      </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem className="flex items-center gap-2">
-                      <Settings className="h-4 w-4" />
-                      <span>Settings</span>
+                    {isAdmin && (
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin" className="flex items-center gap-2">
+                          <Settings className="h-4 w-4" />
+                          <span>Admin Panel</span>
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard/settings" className="flex items-center gap-2">
+                        <Settings className="h-4 w-4" />
+                        <span>Settings</span>
+                      </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="flex items-center gap-2 text-red-500">
-                      <LogIn className="h-4 w-4" />
+                    <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-2 text-red-500">
+                      <LogOut className="h-4 w-4" />
                       <span>Log out</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -291,12 +322,16 @@ export function Header() {
                   Help
                 </Button>
 
-                <Button variant="ghost" className="text-primary-foreground">
-                  <LogIn className="h-4 w-4 mr-2" />
-                  Sign In
+                <Button variant="ghost" asChild className="text-primary-foreground">
+                  <Link href="/auth/login">
+                    <LogIn className="h-4 w-4 mr-2" />
+                    Sign In
+                  </Link>
                 </Button>
 
-                <Button variant="secondary">Register</Button>
+                <Button variant="secondary" asChild>
+                  <Link href="/auth/register">Register</Link>
+                </Button>
               </>
             )}
           </div>
@@ -317,24 +352,24 @@ export function Header() {
                 </SheetTitle>
               </SheetHeader>
               <div className="py-4">
-                {isLoggedIn ? (
+                {isAuthenticated ? (
                   <div className="flex items-center gap-3 p-3 mb-4 bg-muted rounded-lg">
                     <Avatar className="h-10 w-10">
-                      <AvatarImage src="/placeholder.svg?height=40&width=40" alt="User" />
-                      <AvatarFallback>U</AvatarFallback>
+                      <AvatarImage src="/placeholder.svg?height=40&width=40" alt={user?.name} />
+                      <AvatarFallback>{user?.name?.charAt(0) || "U"}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
-                      <p className="font-medium">John Doe</p>
-                      <p className="text-sm text-muted-foreground">john.doe@example.com</p>
+                      <p className="font-medium">{user?.name}</p>
+                      <p className="text-sm text-muted-foreground">{user?.email}</p>
                     </div>
                   </div>
                 ) : (
                   <div className="flex gap-2 mb-4">
                     <Button className="flex-1" asChild>
-                      <Link href="/login">Sign In</Link>
+                      <Link href="/auth/login">Sign In</Link>
                     </Button>
-                    <Button variant="outline" className="flex-1" asChild>
-                      <Link href="/register">Register</Link>
+                    <Button variant="outline" className="flex-1 bg-transparent" asChild>
+                      <Link href="/auth/register">Register</Link>
                     </Button>
                   </div>
                 )}
@@ -343,7 +378,7 @@ export function Header() {
                   <h3 className="mb-2 px-1 text-sm font-medium text-muted-foreground">LOCATION</h3>
                   <Button
                     variant="outline"
-                    className="w-full justify-start gap-2"
+                    className="w-full justify-start gap-2 bg-transparent"
                     onClick={() => setLocationDialogOpen(true)}
                   >
                     <MapPin className="h-4 w-4 text-primary" />
@@ -360,7 +395,7 @@ export function Header() {
                         <Link
                           href={item.href}
                           className={cn(
-                            "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm",
+                            "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
                             pathname === item.href ? "bg-primary text-primary-foreground" : "hover:bg-muted",
                           )}
                         >
@@ -372,14 +407,14 @@ export function Header() {
                   </div>
                 </div>
 
-                {isLoggedIn && (
+                {isAuthenticated && (
                   <div className="mb-4">
                     <h3 className="mb-2 px-1 text-sm font-medium text-muted-foreground">MY ACCOUNT</h3>
                     <div className="space-y-1">
                       <SheetClose asChild>
                         <Link
                           href="/dashboard"
-                          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
+                          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors"
                         >
                           <User className="h-4 w-4" />
                           Dashboard
@@ -388,7 +423,7 @@ export function Header() {
                       <SheetClose asChild>
                         <Link
                           href="/dashboard/properties"
-                          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
+                          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors"
                         >
                           <Building className="h-4 w-4" />
                           My Properties
@@ -397,7 +432,7 @@ export function Header() {
                       <SheetClose asChild>
                         <Link
                           href="/dashboard/messages"
-                          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
+                          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors"
                         >
                           <MessageSquare className="h-4 w-4" />
                           Messages
@@ -407,13 +442,24 @@ export function Header() {
                       <SheetClose asChild>
                         <Link
                           href="/dashboard/saved"
-                          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
+                          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors"
                         >
                           <Heart className="h-4 w-4" />
                           Saved Properties
                           <Badge className="ml-auto bg-primary text-xs">2</Badge>
                         </Link>
                       </SheetClose>
+                      {isAdmin && (
+                        <SheetClose asChild>
+                          <Link
+                            href="/admin"
+                            className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors"
+                          >
+                            <Settings className="h-4 w-4" />
+                            Admin Panel
+                          </Link>
+                        </SheetClose>
+                      )}
                     </div>
                   </div>
                 )}
@@ -424,7 +470,7 @@ export function Header() {
                     <SheetClose asChild>
                       <Link
                         href="/help"
-                        className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
+                        className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors"
                       >
                         <HelpCircle className="h-4 w-4" />
                         Help & Support
@@ -433,7 +479,7 @@ export function Header() {
                     <SheetClose asChild>
                       <Link
                         href="/about"
-                        className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
+                        className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors"
                       >
                         <Info className="h-4 w-4" />
                         About Us
@@ -442,21 +488,21 @@ export function Header() {
                     <SheetClose asChild>
                       <Link
                         href="/settings"
-                        className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
+                        className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted transition-colors"
                       >
                         <Settings className="h-4 w-4" />
                         Settings
                       </Link>
                     </SheetClose>
-                    {isLoggedIn && (
+                    {isAuthenticated && (
                       <SheetClose asChild>
-                        <Link
-                          href="/logout"
-                          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-red-500 hover:bg-muted"
+                        <button
+                          onClick={handleLogout}
+                          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-red-500 hover:bg-muted transition-colors w-full text-left"
                         >
-                          <LogIn className="h-4 w-4" />
+                          <LogOut className="h-4 w-4" />
                           Sign Out
-                        </Link>
+                        </button>
                       </SheetClose>
                     )}
                   </div>
@@ -496,8 +542,8 @@ export function Header() {
                 key={category.name}
                 href={category.href}
                 className={cn(
-                  "flex items-center gap-1 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium",
-                  pathname === category.href ? "bg-accent/50" : "",
+                  "flex items-center gap-1 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                  pathname === category.href ? "bg-accent/50" : "hover:bg-accent/50",
                 )}
               >
                 <category.icon className="h-4 w-4" />
