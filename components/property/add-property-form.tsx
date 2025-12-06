@@ -84,9 +84,43 @@ export function AddPropertyForm() {
     },
   })
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    // In a real app, you would submit the form data to your API
-    console.log(values)
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      const response = await fetch("/api/properties", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: values.title,
+          description: values.description,
+          property_type: values.propertyType,
+          listing_type: values.listingType,
+          price: Number.parseFloat(values.price),
+          bedrooms: values.bedrooms ? Number.parseInt(values.bedrooms) : null,
+          bathrooms: values.bathrooms ? Number.parseInt(values.bathrooms) : null,
+          area: values.area ? Number.parseFloat(values.area) : null,
+          address: values.address,
+          city: values.city,
+          state: values.state,
+          features: values.features || [],
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to create property")
+      }
+
+      const result = await response.json()
+      console.log("[v0] Property created:", result)
+
+      // Reset form after successful submission
+      form.reset()
+      alert("Property created successfully!")
+    } catch (error) {
+      console.error("[v0] Error creating property:", error)
+      alert("Failed to create property")
+    }
   }
 
   return (
